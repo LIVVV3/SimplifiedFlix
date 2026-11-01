@@ -1,68 +1,75 @@
-
-//http://www.omdbapi.com/?apikey=5272e65&
 const movieGrid = document.querySelector('.movies-grid');
+const searchInput = document.querySelector('#searchInput');
+const resultsInfo = document.querySelector('#resultsInfo');
 
-async function fetchMovieData() {
-    const response = await fetch('http://www.omdbapi.com/?apikey=5272e65&s=avengers');
+async function fetchMovieData(searchTerm = 'avengers') {
+    const response = await fetch(`https://www.omdbapi.com/?apikey=5272e65&s=${encodeURIComponent(searchTerm)}`);
     const data = await response.json();
-    console.log(data); // Debugging line to check API response
 
-    // Check if the response is successful and contains movies
     if (data.Response === 'True') {
-        const moviesArray = data.Search; // Access the array of movies
+        const moviesArray = data.Search;
         movieGrid.innerHTML = moviesArray.map(movie => movieHTML(movie)).join('');
     } else {
-        // Handle the case where no movies are found or there is an error
-        console.error('No movies found:', data.Error);
+        movieGrid.innerHTML = `<p class="no-results">${data.Error || 'No movies found.'}</p>`;
     }
+}
+
+function searchMovies(event) {
+    event.preventDefault(); // Prevents page reload
+    const query = searchInput.value.trim();
+    if (!query) return;
+
+    if (resultsInfo) {
+        resultsInfo.innerHTML = `<span>Showing: </span>${query}`;
+    }
+
+    fetchMovieData(query);
 }
 
 function sortMovies(event) {
     const sortValue = event.target.value;
-    const moviesArray = Array.from(movieGrid.children); // Get the current movie cards as an array
+    const moviesArray = Array.from(movieGrid.children);
+
     if (sortValue === 'a-z') {
         moviesArray.sort((a, b) => {
-            const titleA = a.querySelector('.movie-card__title').textContent.toLowerCase();
-            const titleB = b.querySelector('.movie-card__title').textContent.toLowerCase();
+            const titleA = a.querySelector('.movie-card__title')?.textContent.toLowerCase() || '';
+            const titleB = b.querySelector('.movie-card__title')?.textContent.toLowerCase() || '';
             return titleA.localeCompare(titleB);
         });
     } else if (sortValue === 'z-a') {
         moviesArray.sort((a, b) => {
-            const titleA = a.querySelector('.movie-card__title').textContent.toLowerCase();
-            const titleB = b.querySelector('.movie-card__title').textContent.toLowerCase();
+            const titleA = a.querySelector('.movie-card__title')?.textContent.toLowerCase() || '';
+            const titleB = b.querySelector('.movie-card__title')?.textContent.toLowerCase() || '';
             return titleB.localeCompare(titleA);
         });
-    }
-    else if (sortValue === 'newest') {
+    } else if (sortValue === 'newest') {
         moviesArray.sort((a, b) => {
-            const yearA = parseInt(a.querySelector('.movie-card__year').textContent);
-            const yearB = parseInt(b.querySelector('.movie-card__year').textContent);
+            const yearA = parseInt(a.querySelector('.movie-card__year')?.textContent) || 0;
+            const yearB = parseInt(b.querySelector('.movie-card__year')?.textContent) || 0;
             return yearB - yearA;
         });
-    }
-    else if (sortValue === 'oldest') {
+    } else if (sortValue === 'oldest') {
         moviesArray.sort((a, b) => {
-            const yearA = parseInt(a.querySelector('.movie-card__year').textContent);
-            const yearB = parseInt(b.querySelector('.movie-card__year').textContent);
+            const yearA = parseInt(a.querySelector('.movie-card__year')?.textContent) || 0;
+            const yearB = parseInt(b.querySelector('.movie-card__year')?.textContent) || 0;
             return yearA - yearB;
         });
     }
-    // Clear the movie grid and append the sorted movies
+
     movieGrid.innerHTML = '';
     moviesArray.forEach(movie => movieGrid.appendChild(movie));
 }
 
-// Call the function to fetch and display movie data when the page loads
-
-
-fetchMovieData();
-
 function movieHTML(movie) {
+    const poster = movie.Poster !== 'N/A' ? movie.Poster : 'https://via.placeholder.com/300x450?text=No+Poster';
     return `
         <div class="movie-card">
-            <img class="movie-card__img" src="${movie.Poster}" alt="${movie.Title}">
+            <img class="movie-card__img" src="${poster}" alt="${movie.Title}">
             <h2 class="movie-card__title">${movie.Title}</h2>
             <p class="movie-card__year">${movie.Year}</p>
         </div>
     `;
 }
+
+// Initial load
+fetchMovieData();
